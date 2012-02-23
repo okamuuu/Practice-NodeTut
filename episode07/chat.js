@@ -1,7 +1,6 @@
 var http = require('http'),
     util = require('util'),
-    fs   = require('fs'),
-    io   = require('socket.io');
+    fs   = require('fs');
 
 var server = http.createServer(function(request, response) {
   response.writeHead(200, {
@@ -10,14 +9,11 @@ var server = http.createServer(function(request, response) {
   
   var rs = fs.createReadStream(__dirname + '/template.html');
   util.pump(rs, response);
-  
 });
 
-var socket = io.listen(server);
+var io = require('socket.io').listen(server);
 
-socket.on('connection', function(client) {
-
-  console.log(client);
+io.sockets.on('connection', function(client) {
 
   var username;
   
@@ -25,14 +21,13 @@ socket.on('connection', function(client) {
   client.send('Please input your username: ');
   
   client.on('message', function(message) {
-    console.log(message);
     if (!username) {
       username = message;
       client.send('Welcome, ' + username + '!');
       return;
     }
-    
-    socket.broadcast( username + ' sent: ' + message);
+    client.send(username + ' sent: ' + message); // send ownself
+    client.broadcast.send(username + ' sent: ' + message); // send others
   });
   
 });

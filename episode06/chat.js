@@ -1,40 +1,58 @@
-var net = require('net');
-var carrier = require('carrier');
+var http = require('http'),
+    util = require('util'),
+    fs   = require('fs'),
+    ws   = require('./ws.js');
 
-var connections = [];
+var clients = [];
 
-net.createServer(function (conn) {
-     
-    connections.push(conn);
+http.createServer(function(request, response) {
+  response.writeHead(200, {
+    'Content-Type': 'text/html'
+  });
   
-    conn.on('close', function () {
-        var pos = connections.indexOf(conn);
-        if (pos >= 0) {
-            connections.splice(pos, 1);
-        }
-    });
-
-    conn.write("Hello, welcome to this chat server!\n");
-    conn.write("Please input your user name\n");
-
-    var username;
-
-    carrier.carry(conn, function (line) {
-        if (!username) {
-            username = line;
-            conn.write("Hello " + username + "!\n");
-            return;
-        }
-
-        if (line == 'quit') {
-            conn.end();
-            return;
-        }
-
-        connections.forEach(function (one_connection) {
-            one_connection.write(line);
-        });
-    });
-
+  var rs = fs.createReadStream(__dirname + '/template.html');
+  util.pump(rs, response);
+  
 }).listen(4000);
 
+ws.createServer(function(websocket) {
+
+  console.log(websocket);
+
+  var username;
+  
+  websocket.on('connect', function(resource) {
+    console.log('---');
+    console.log(resource);
+    clients.push(websocket);
+    websocket.write('Welcome to this chat server!');
+    websocket.write('Please input your username:');
+  });
+  
+  websocket.on('data', function(data) {
+    console.log('===');
+    console.log(data);
+    console.log(clients);
+
+    if (!username) {
+      username = data.toString();
+      websocket.write('Welcome, ' + username + '!');
+      return;
+    }
+    
+    var feedback = username + ' said: ' + data.toString();
+    
+    clients.forEach(function(client) {
+      client.write(feedback);
+    });
+  });
+  
+  websocket.on('close', function() {
+    console.log('close...');
+    var pos = clients.indexOf(websocket);
+    if (pos >= 0) {
+      clients.splice(pos, 1);
+    }
+  });
+  
+}).listen(8080);

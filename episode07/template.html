@@ -9,10 +9,10 @@
         var entry_el = $('#entry');
         var socket = io.connect('localhost', {port: 4000});
         console.log('connecting...');
-        socket.on('connect', function() {
+        socket.on('client connect', function() {
           console.log('connect');
         });
-        socket.on('msg', function(message) {
+        socket.on('message', function(message) {
           var data = message.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
           $('#log ul').append('<li>' + data + '</li>');          
           window.scrollBy(0, 1000000000000000);
