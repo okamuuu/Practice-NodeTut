@@ -1,0 +1,11 @@
+h2= product.name
+p= product.description
+p Price: #{product.price}
+- if(product.photo)
+  p
+    img(src=product.photo)
+
+p
+  a(href='/products') Back
+p
+  a(href='/products/' + product.id + '/edit') Edit
